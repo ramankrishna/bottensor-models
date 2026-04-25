@@ -48,6 +48,7 @@ pipeline_post_merge.sh  chains steps 4–7 after training finishes
 ## Files
 
 ```
+requirements.txt     # full training stack (torch, unsloth, trl, ...)
 configs/
   └── config.py        # all hyperparams + dataset URIs + paths
 scripts/

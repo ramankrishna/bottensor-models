@@ -1,0 +1,23 @@
+# shared/utils — third-party deps
+#
+# Each helper module imports lazily inside its functions, so just
+# importing `shared.utils` doesn't pull in everything below. Install
+# only what you actually use:
+#
+#   sft.py           transformers, datasets
+#   hf_push.py       huggingface-hub
+#   gptq.py          torch, transformers, datasets, llmcompressor, vllm  (vllm only for smoke_test)
+#   gguf.py          (no Python deps — shells out to llama.cpp)
+#   eval/gsm8k.py    datasets
+#   eval/identity.py (stdlib only)
+#   eval/math_bench.py (stdlib only)
+#
+# In practice each model dir's requirements.txt already covers all of
+# these — this file exists for stand-alone use of shared/utils.
+
+torch>=2.10.0
+transformers>=4.57.0,<=5.5.0
+datasets>=3.0.0
+huggingface-hub>=0.26.0
+llmcompressor>=0.10.0
+vllm>=0.18.0                  # only needed for gptq.smoke_test()

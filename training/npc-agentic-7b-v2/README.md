@@ -61,6 +61,7 @@ v2_post_train.sh            # chains 03 → 07 with hard exit-code checks
 ## Files
 
 ```
+requirements.txt           # full training stack (torch, unsloth, trl, ...)
 configs/
   └── config.py
 scripts/
