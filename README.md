@@ -1,5 +1,8 @@
 # bottensor-models
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19771040.svg)](https://doi.org/10.5281/zenodo.19771040)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+
 Training scripts and configs for the **NPC Model Family** by
 **Bottensor** (a Falcon Hash company).
 
@@ -89,6 +92,30 @@ See each model's README for hardware, dataset mix, and runtime.
 
 Apache-2.0 — see [LICENSE](LICENSE).
 
+## Citation
+
+If you use **NPC Fast 1.7B** or build on its training recipe, please
+cite the accompanying preprint:
+
+> Bachu, R. K. (2026). *NPC Fast 1.7B: Building a Usable Small Model on
+> a Single H100.* Zenodo. https://doi.org/10.5281/zenodo.19771040
+
+BibTeX:
+
+```bibtex
+@misc{bachu2026npcfast,
+  title        = {NPC Fast 1.7B: Building a Usable Small Model on a Single H100},
+  author       = {Bachu, Rama Krishna},
+  year         = {2026},
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.19771040},
+  url          = {https://doi.org/10.5281/zenodo.19771040},
+  note         = {Preprint},
+}
+```
+
 ## Author
 
 **Rama Krishna Bachu** (`dude.npc`) — founder, Falcon Hash → Bottensor.
+[ORCID 0009-0000-1298-0681](https://orcid.org/0009-0000-1298-0681) ·
+[ramakrishna.bachu@bottensor.xyz](mailto:ramakrishna.bachu@bottensor.xyz)

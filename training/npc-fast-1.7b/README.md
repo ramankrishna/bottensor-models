@@ -139,3 +139,22 @@ python main.py preview --k 5
 - `ramankrishna10/npc-fast-1.7b` — bf16 full model
 - `ramankrishna10/npc-fast-1.7b-gptq` — 4-bit GPTQ
 - `ramankrishna10/npc-fast-1.7b-gguf` — GGUF (Q4_K_M + Q8_0)
+
+## Citation
+
+This pipeline is documented in the accompanying preprint:
+
+> Bachu, R. K. (2026). *NPC Fast 1.7B: Building a Usable Small Model on
+> a Single H100.* Zenodo. https://doi.org/10.5281/zenodo.19771040
+
+```bibtex
+@misc{bachu2026npcfast,
+  title     = {NPC Fast 1.7B: Building a Usable Small Model on a Single H100},
+  author    = {Bachu, Rama Krishna},
+  year      = {2026},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.19771040},
+  url       = {https://doi.org/10.5281/zenodo.19771040},
+  note      = {Preprint},
+}
+```
