@@ -1,0 +1,43 @@
+# ── Line endings ──────────────────────────────────────────────────────
+* text=auto eol=lf
+
+# Python / config — explicit text
+*.py     text eol=lf
+*.sh     text eol=lf
+*.yaml   text eol=lf
+*.yml    text eol=lf
+*.json   text eol=lf
+*.toml   text eol=lf
+*.md     text eol=lf
+*.txt    text eol=lf
+*.cfg    text eol=lf
+*.ini    text eol=lf
+Dockerfile      text eol=lf
+.gitignore      text eol=lf
+.gitattributes  text eol=lf
+.env.example    text eol=lf
+
+# ── Binary (force git to never line-end-munge) ────────────────────────
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.ico    binary
+*.pdf    binary
+*.zip    binary
+*.tar    binary
+*.tar.gz binary
+*.tgz    binary
+*.bin    binary
+*.safetensors binary
+*.gguf   binary
+*.pt     binary
+*.pth    binary
+*.ckpt   binary
+*.onnx   binary
+*.parquet binary
+*.arrow  binary
+
+# ── Linguist hints (cleaner GitHub language stats) ────────────────────
+training/**/*.sh   linguist-language=Shell
+*.ipynb            linguist-language=Python

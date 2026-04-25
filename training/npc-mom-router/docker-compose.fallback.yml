@@ -1,0 +1,57 @@
+version: '3.8'
+
+# Fallback compose for when vLLM + bitsandbytes fails to load npc-fin-32b-sft.
+# Swaps the npc-fin service for a transformers + bitsandbytes custom worker
+# that speaks the OpenAI /v1/chat/completions protocol.
+#
+# Usage:
+#   docker-compose -f docker-compose.yml -f docker-compose.fallback.yml up -d
+
+services:
+  npc-fin:
+    image: python:3.11-slim
+    container_name: npc-fin
+    command: >
+      bash -lc "
+        apt-get update && apt-get install -y --no-install-recommends curl &&
+        pip install --no-cache-dir
+          'torch==2.4.1'
+          'transformers>=4.46'
+          'accelerate>=0.34'
+          'bitsandbytes>=0.44'
+          'fastapi>=0.115' 'uvicorn[standard]>=0.30'
+          'sentencepiece' 'safetensors' 'huggingface_hub>=0.25' &&
+        python /app/scripts/transformers_worker.py
+          --model ramankrishna10/npc-fin-32b-sft
+          --port 8002
+          --host 0.0.0.0
+          --max-model-len 8192
+          --served-model-name npc-fin-32b
+      "
+    ports:
+      - "8002:8002"
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+      - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
+    volumes:
+      - ./:/app
+      - hf-cache:/root/.cache/huggingface
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8002/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 30
+      start_period: 600s
+    restart: unless-stopped
+
+volumes:
+  hf-cache:
+    driver: local

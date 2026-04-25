@@ -1,0 +1,113 @@
+version: '3.8'
+
+# NPC Mixture of Models — three services on a single A40 (48 GB).
+#   npc-fast    : vLLM OpenAI server, NPC Fast 1.7B, FP16, ~3.4 GB + tiny KV
+#   npc-fin     : vLLM OpenAI server, NPC Fin 32B, bitsandbytes 4-bit, ~20 GB
+#   router      : FastAPI MoM router, routes/forwards to the above
+#
+# If vLLM bitsandbytes support doesn't work for npc-fin, replace that service
+# with the transformers fallback (see docker-compose.fallback.yml and
+# scripts/transformers_worker.py).
+
+services:
+  npc-fast:
+    image: vllm/vllm-openai:latest
+    container_name: npc-fast
+    command: >
+      --model ramankrishna10/npc-fast-1.7b
+      --port 8001
+      --dtype float16
+      --max-model-len 16384
+      --gpu-memory-utilization 0.10
+      --trust-remote-code
+      --served-model-name ramankrishna10/npc-fast-1.7b npc-fast
+    ports:
+      - "8001:8001"
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+      - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
+      - VLLM_LOGGING_LEVEL=INFO
+    volumes:
+      - hf-cache:/root/.cache/huggingface
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8001/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 120s
+    restart: unless-stopped
+
+  npc-fin:
+    image: vllm/vllm-openai:latest
+    container_name: npc-fin
+    command: >
+      --model ramankrishna10/npc-fin-32b-sft
+      --port 8002
+      --quantization bitsandbytes
+      --load-format bitsandbytes
+      --dtype float16
+      --max-model-len 8192
+      --gpu-memory-utilization 0.85
+      --trust-remote-code
+      --served-model-name ramankrishna10/npc-fin-32b-sft npc-fin-32b
+    ports:
+      - "8002:8002"
+    ipc: host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      - HF_TOKEN=${HF_TOKEN}
+      - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN}
+      - VLLM_LOGGING_LEVEL=INFO
+    volumes:
+      - hf-cache:/root/.cache/huggingface
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8002/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 20
+      start_period: 300s
+    restart: unless-stopped
+
+  router:
+    build: .
+    container_name: npc-mom-router
+    ports:
+      - "8000:8000"
+    environment:
+      - NPC_FAST_URL=http://npc-fast:8001
+      - NPC_FIN_URL=http://npc-fin:8002
+      - MONGO_URI=${MONGO_URI}
+      - MONGO_DB=${MONGO_DB:-bottensor}
+      - MONGO_COLLECTION=${MONGO_COLLECTION:-api_keys}
+      - HF_TOKEN=${HF_TOKEN}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - LOG_FILE=/var/log/npc-mom/requests.log
+      - ALLOW_DEV_KEY=${ALLOW_DEV_KEY:-false}
+    volumes:
+      - npc-mom-logs:/var/log/npc-mom
+    depends_on:
+      npc-fast:
+        condition: service_healthy
+      npc-fin:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  hf-cache:
+    driver: local
+  npc-mom-logs:
+    driver: local

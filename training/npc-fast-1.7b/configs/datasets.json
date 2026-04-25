@@ -1,0 +1,34 @@
+{
+  "datasets": [
+    {
+      "id": "ramankrishna10/npc-fast-datagen-batch-001",
+      "type": "sharegpt",
+      "private": true,
+      "weight": 1.0,
+      "split": "train"
+    },
+    {
+      "id": "lambda/hermes-agent-reasoning-traces",
+      "type": "sharegpt",
+      "private": false,
+      "weight": 1.0,
+      "subset": "glm-5.1",
+      "split": "train"
+    },
+    {
+      "id": "lambda/hermes-agent-reasoning-traces",
+      "type": "sharegpt",
+      "private": false,
+      "weight": 1.0,
+      "subset": "kimi",
+      "split": "train"
+    },
+    {
+      "id": "Roman1111111/claude-opus-4.6-10000x",
+      "type": "openai",
+      "private": false,
+      "weight": 0.8,
+      "split": "train"
+    }
+  ]
+}
