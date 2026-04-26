@@ -1,8 +1,29 @@
 # Paper — Cheap PRMs
 
-> **Status: draft complete (8 pages). All numbers filled from Phase 1 + 2 + OOD eval. Ready for Zenodo upload.**
+> **Status: PUBLISHED on Zenodo (2026-04-26). DOI: [10.5281/zenodo.19800784](https://doi.org/10.5281/zenodo.19800784).**
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19800784.svg)](https://doi.org/10.5281/zenodo.19800784)
 
 LaTeX source and compiled PDF for the paper accompanying NPC Fin-PRM 7B.
+
+## Cite
+
+> Bachu, R. K. (2026). *Cheap PRMs: Multi-Dimensional Process Reward
+> Modeling for Domain-Specialized Reasoning.* Zenodo.
+> https://doi.org/10.5281/zenodo.19800784
+
+```bibtex
+@misc{bachu2026cheapprms,
+  title     = {Cheap PRMs: Multi-Dimensional Process Reward Modeling for
+               Domain-Specialized Reasoning},
+  author    = {Bachu, Rama Krishna},
+  year      = {2026},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.19800784},
+  url       = {https://doi.org/10.5281/zenodo.19800784},
+  note      = {Preprint},
+}
+```
 
 ## Files
 

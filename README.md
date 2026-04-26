@@ -1,6 +1,7 @@
 # bottensor-models
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19771040.svg)](https://doi.org/10.5281/zenodo.19771040)
+[![NPC Fast DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19771040.svg)](https://doi.org/10.5281/zenodo.19771040)
+[![Cheap PRMs DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19800784.svg)](https://doi.org/10.5281/zenodo.19800784)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 Training scripts and configs for the **NPC Model Family** by
@@ -97,11 +98,18 @@ Apache-2.0 — see [LICENSE](LICENSE).
 
 ## Citation
 
-If you use **NPC Fast 1.7B** or build on its training recipe, please
-cite the accompanying preprint:
+Two preprints accompany the family. Cite whichever you build on:
+
+### NPC Fast 1.7B — single-H100 small-model recipe
 
 > Bachu, R. K. (2026). *NPC Fast 1.7B: Building a Usable Small Model on
 > a Single H100.* Zenodo. https://doi.org/10.5281/zenodo.19771040
+
+### Cheap PRMs — domain-specialized process reward model
+
+> Bachu, R. K. (2026). *Cheap PRMs: Multi-Dimensional Process Reward
+> Modeling for Domain-Specialized Reasoning.* Zenodo.
+> https://doi.org/10.5281/zenodo.19800784
 
 BibTeX:
 
@@ -113,6 +121,17 @@ BibTeX:
   publisher    = {Zenodo},
   doi          = {10.5281/zenodo.19771040},
   url          = {https://doi.org/10.5281/zenodo.19771040},
+  note         = {Preprint},
+}
+
+@misc{bachu2026cheapprms,
+  title        = {Cheap PRMs: Multi-Dimensional Process Reward Modeling
+                  for Domain-Specialized Reasoning},
+  author       = {Bachu, Rama Krishna},
+  year         = {2026},
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.19800784},
+  url          = {https://doi.org/10.5281/zenodo.19800784},
   note         = {Preprint},
 }
 ```

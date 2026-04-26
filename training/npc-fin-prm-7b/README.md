@@ -275,19 +275,22 @@ Outputs land in `/workspace/finprm-eval/results/`:
 
 ## Citation
 
+> Bachu, R. K. (2026). *Cheap PRMs: Multi-Dimensional Process Reward
+> Modeling for Domain-Specialized Reasoning.* Zenodo.
+> https://doi.org/10.5281/zenodo.19800784
+
 ```bibtex
-@misc{bachu2026cheapprm,
-  title  = {Cheap PRMs: Multi-Dimensional Process Reward Modeling for
-            Domain-Specialized Reasoning},
-  author = {Bachu, Rama Krishna},
-  year   = {2026},
-  note   = {Preprint, in preparation. Model:
-            https://huggingface.co/ramankrishna10/npc-fin-prm-7b},
+@misc{bachu2026cheapprms,
+  title     = {Cheap PRMs: Multi-Dimensional Process Reward Modeling for
+               Domain-Specialized Reasoning},
+  author    = {Bachu, Rama Krishna},
+  year      = {2026},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.19800784},
+  url       = {https://doi.org/10.5281/zenodo.19800784},
+  note      = {Preprint},
 }
 ```
-
-DOI will be minted via Zenodo once paper-quality eval (Phase 2) finishes.
-This citation block will be updated to include the DOI.
 
 ## Related
 
