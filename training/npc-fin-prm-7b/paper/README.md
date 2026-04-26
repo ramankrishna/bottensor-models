@@ -1,6 +1,6 @@
-# Paper draft — Cheap PRMs
+# Paper — Cheap PRMs
 
-> **Status: draft, in preparation. Awaiting OOD eval results to fill three placeholder fields, then Zenodo upload.**
+> **Status: draft complete (8 pages). All numbers filled from Phase 1 + 2 + OOD eval. Ready for Zenodo upload.**
 
 LaTeX source and compiled PDF for the paper accompanying NPC Fin-PRM 7B.
 
@@ -9,22 +9,19 @@ LaTeX source and compiled PDF for the paper accompanying NPC Fin-PRM 7B.
 | File | What |
 |---|---|
 | `cheap-prms.tex` | LaTeX source (mirrors NPC Fast paper structure / class / hyperref setup) |
-| `cheap-prms.pdf` | Compiled draft (8 pages) |
+| `cheap-prms.pdf` | Compiled draft, 8 pages, ~96 KB |
 
-## What's in / what's pending
+## What's filled
 
-Filled with **real numbers from Phase 1 + Phase 2** runs:
-- All training-config numbers (verified from the published `trainer_state.json`)
-- Phase 1 dataset analysis (orthogonality finding, score distributions, error taxonomy)
-- Phase 2 in-distribution eval on n=200 (Spearman, F1, MAE, confusion matrix)
-- Calibration table (ECE = 0.21) — paper's headline new finding
+All headline numbers from the runs in this directory:
 
-Placeholders (3 fields, abstract + Section 5.3 OOD table):
-- `[OOD_REJECTION_RATE]` — % of gold-correct math reasoning the PRM mis-flags as FLAWED
-- `[OOD_FLAGGED_RATE]` — same metric, expressed differently in body text
-- `[OOD_MEAN_SCORE]` — mean PRM `overall_score` on OOD math steps
-
-These fill in once the OOD eval (`eval/run_mlx_eval.py` on `analysis/ood_steps.jsonl`) finishes.
+- **Training config** (Section 4) — verified from the published `trainer_state.json`
+- **Dataset stats** (Section 3) — score distributions, rating partition, error taxonomy
+- **Orthogonality** (Section 3.4) — pairwise Spearman among the 4 dimensions, $\rho \in [0.85, 0.92]$ for the cluster
+- **In-distribution eval** (Section 5.1) — Spearman 0.9234, F1 0.8421, MAE 0.0404, confusion matrix
+- **Calibration** (Section 5.2) — ECE = 0.21 reliability table (paper's headline new finding)
+- **OOD eval** (Section 5.3) — 5.2% mis-flag rate on 307 gold-correct GSM8K+MATH-500 steps, plus the rating-extrapolation observation (`EXCELLENT`/`PERFECT` emitted on 3.9% of OOD steps despite never appearing in training)
+- **Limitations** (Section 6) — bootstrap not run, judge ceiling, dimension redundancy, calibration uncorrected, no human eval
 
 ## Compile
 

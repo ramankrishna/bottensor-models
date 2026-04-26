@@ -1,0 +1,32 @@
+======================================================================
+OOD EVAL — gold-correct math reasoning vs. NPC Fin-PRM (DeFi-trained)
+Eval: M5 MLX 4-bit, n=307 (134 GSM8K + 173 MATH-500), 2026-04-26
+======================================================================
+
+Source        n  parsed   mean_score   FLAWED    FLAW%
+GSM8K       134     134       0.8694        6    4.48%
+MATH-500    173     173       0.8460       10    5.78%
+TOTAL       307     307       0.8562       16    5.21%
+
+Parse failures: 0/307 (0.00%)
+
+Rating breakdown (all 307 OOD steps):
+  STRONG                      270  (87.9%)
+  FLAWED                       16  (5.2%)
+  EXCELLENT                    11  (3.6%)
+  ACCEPTABLE_WITH_ISSUES        9  (2.9%)
+  PERFECT                       1  (0.3%)
+
+Score histogram:
+  [0.00, 0.20)     0
+  [0.20, 0.40)     5
+  [0.40, 0.50)    11
+  [0.50, 0.60)     3
+  [0.60, 0.70)     6
+  [0.70, 0.80)     0
+  [0.80, 0.90)   187
+  [0.90, 1.00)    95
+
+NOTE: Two predicted ratings ("EXCELLENT", "PERFECT") are extrapolations
+outside the training label set {STRONG, ACCEPTABLE_WITH_ISSUES, FLAWED}.
+11+1 = 12 of 307 (3.9%). These should be folded into STRONG for downstream use.

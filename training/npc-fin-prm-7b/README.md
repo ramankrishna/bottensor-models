@@ -213,7 +213,7 @@ use `run_prm.py` on CUDA pods.
 | **"3 bootstrapped iterations" claim on HF card** | **Wrong.** Trainer state shows 1 continuous run × 3 epochs. No LR resets, no loss spikes. | Fix HF card: replace "3 iterations" with "3 epochs"; or actually run the bootstrap loop and earn the claim |
 | **Calibration layer** | Not in shipped model | Train Platt-scaling head on the eval predictions; ship as a sidecar |
 | **Human-eval baseline** | Not run | ~3 hr of manual scoring on 200 val steps, by the author |
-| **OOD probe (math reasoning)** | Test set built (307 steps); inference queued | Runs on the pod after v2 frees the A40, OR re-run MLX path on Mac |
+| **OOD probe (math reasoning)** | **Done.** 5.2% mis-flag on gold-correct GSM8K + MATH-500 (16/307 FLAWED, mean score 0.856). See `analysis/eval_report_ood.txt`. | Cross-domain transfer is better than expected. |
 | **Best-of-N downstream impact** | Blocked on NPC Agentic v2 completion | Run after v2 ships |
 
 ## Reproducing the eval
