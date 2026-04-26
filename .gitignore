@@ -95,3 +95,14 @@ hf_cache/
 # ── Orchestrator scratch ──────────────────────────────────────────────
 *.pid
 nohup.out
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
