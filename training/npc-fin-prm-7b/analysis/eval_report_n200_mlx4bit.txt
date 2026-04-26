@@ -1,0 +1,43 @@
+loaded 200 prediction rows
+
+parse failures (pred): 0/200  (0.00%)
+parse failures (gold): 0/200
+usable for scoring:    200
+
+=== Overall Spearman ===
+  overall_score: 0.9234
+
+=== Per-dimension Spearman ===
+  factual_accuracy       n=200  rho=0.8422
+  logical_validity       n=200  rho=0.9311
+  completeness           n=200  rho=0.8649
+  risk_awareness         n=200  rho=0.9083
+
+=== MAE on overall_score ===
+  mean abs error: 0.0404
+
+=== Rating-label accuracy ===
+  exact match: 177/200 = 88.50%
+  confusion matrix (rows=gold, cols=pred):
+                                STRONG ACCEPTABL    FLAWED      None
+    STRONG                          79         1         0         0
+    ACCEPTABLE_WITH_ISSUES          10        66         4         0
+    FLAWED                           0         8        32         0
+
+=== Error-detection F1 (FLAWED vs not-FLAWED) ===
+  TP=32  FP=4  FN=8  TN=156
+  precision=0.8889  recall=0.8000  F1=0.8421
+
+=== Calibration (ECE on FLAWED probability) ===
+  ECE: 0.2093
+  bin              n     avg_p_flawed   actual_flawed_rate
+  [0.0, 0.1)       5           0.095               0.000   █
+  [0.1, 0.2)      84           0.146               0.000   ██
+  [0.2, 0.3)      14           0.276               0.071   ████
+  [0.3, 0.4)      38           0.331               0.053   █████
+  [0.4, 0.5)      23           0.455               0.217   ████
+  [0.5, 0.6)      20           0.566               0.900   ██████
+  [0.6, 0.7)      10           0.610               0.800   ███
+  [0.7, 0.8)       5           0.710               1.000   █████
+  [0.8, 0.9)       1           0.830               1.000   ███
+  [0.9, 1.0)       0           0.000               0.000   

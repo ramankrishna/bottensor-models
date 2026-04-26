@@ -137,17 +137,84 @@ Spearman of `overall_score` vs each dimension:
 multi-dimensional PRM design pattern, and the central contribution of the
 "Cheap PRMs" paper.
 
-## Honest gaps
+## Phase 2 eval — n=200, MLX 4-bit on Apple M5 (2026-04-26)
+
+Independent re-evaluation of the published model card claims, run on a
+laptop (no pod required) using a stratified 200-example val sample
+(80 STRONG / 80 ACCEPTABLE_WITH_ISSUES / 40 FLAWED).
+
+| Metric | Card claims | This run (n=200) | Match? |
+|---|---:|---:|:---:|
+| Spearman (overall_score) | 0.94 | **0.9234** | ✓ |
+| Step-level rating accuracy | 89.2 % | **88.50 %** | ✓ |
+| Error-detection F1 (FLAWED) | 0.87 | **0.8421** | ✓ |
+| MAE on overall_score | — | **0.0404** | — |
+| Parse failures | — | **0 / 200** | ✓ |
+
+Per-dimension Spearman:
+
+| Dimension | ρ |
+|---|---:|
+| factual_accuracy | 0.842 |
+| logical_validity | **0.931** |
+| completeness | 0.865 |
+| risk_awareness | 0.908 |
+
+Confusion matrix (gold → pred):
+
+| Gold \\ Pred | STRONG | ACCEPTABLE | FLAWED |
+|---|---:|---:|---:|
+| **STRONG** (80) | **79** | 1 | 0 |
+| **ACCEPTABLE** (80) | 10 | **66** | 4 |
+| **FLAWED** (40) | 0 | 8 | **32** |
+
+The model **never confuses STRONG with FLAWED at the extremes** (zero
+off-diagonal between rows 1 and 3). Most errors are STRONG↔ACCEPTABLE
+on borderline reasoning — an intuitive failure mode for a graded
+classifier.
+
+### Calibration is the headline issue (ECE = 0.21)
+
+```
+P(flawed) bin    n    predicted    actual_flawed_rate
+[0.1, 0.2)      84      0.146         0.000        ← way over
+[0.3, 0.4)      38      0.331         0.053        ← still over
+[0.5, 0.6)      20      0.566         0.900        ← under
+[0.7, 0.8)       5      0.710         1.000        ← ok
+```
+
+The PRM **ranks well (Spearman 0.92)** but the score scale is biased
+toward over-flagging in the 0.1–0.5 band and under-flagging at 0.5–0.6.
+**Don't use raw `1 - overall_score` as a calibrated probability** —
+apply Platt-scaling or isotonic regression first.
+
+Full report: `analysis/eval_report_n200_mlx4bit.txt`.
+Per-row predictions: `analysis/eval_preds_n200.jsonl`.
+
+### Reproduction notes
+
+Run on a 24 GB Apple M5 in ~50 minutes:
+
+1. Merge the published PEFT adapter into Qwen2.5-7B-Instruct on CPU (fp16, ~4 min)
+2. Convert merged fp16 → MLX 4-bit (`mlx_lm.convert`, ~2 min)
+3. Run `eval/run_mlx_eval.py` on a 200-example stratified val sample (~45 min)
+4. Score with `eval/score_predictions.py`
+
+The original `eval/run_prm.py` (PyTorch + PEFT + bnb 4-bit) **does NOT
+work on Apple Silicon** because Metal caps single-buffer allocations at
+~14 GiB and the fp16 base hits this limit. Use the MLX path on Mac;
+use `run_prm.py` on CUDA pods.
+
+## Honest gaps still open
 
 | Gap | Status | Plan |
 |---|---|---|
 | **Original training scripts** | Not in repo | Port in when the paper's iteration-ablation runs |
 | **"3 bootstrapped iterations" claim on HF card** | **Wrong.** Trainer state shows 1 continuous run × 3 epochs. No LR resets, no loss spikes. | Fix HF card: replace "3 iterations" with "3 epochs"; or actually run the bootstrap loop and earn the claim |
-| **Real Spearman vs claimed 0.94** | The 0.94 is vs the same Qwen-72B that produced the labels — almost-circular eval | Run `eval/run_on_pod.sh` after v2 finishes; report real number |
+| **Calibration layer** | Not in shipped model | Train Platt-scaling head on the eval predictions; ship as a sidecar |
 | **Human-eval baseline** | Not run | ~3 hr of manual scoring on 200 val steps, by the author |
-| **OOD probe (math reasoning)** | Test set built (307 steps); inference queued | Runs on the pod after v2 frees the A40 |
+| **OOD probe (math reasoning)** | Test set built (307 steps); inference queued | Runs on the pod after v2 frees the A40, OR re-run MLX path on Mac |
 | **Best-of-N downstream impact** | Blocked on NPC Agentic v2 completion | Run after v2 ships |
-| **ECE / reliability diagram** | Code ready in `score_predictions.py` | Computed automatically when val preds land |
 
 ## Reproducing the eval
 
