@@ -17,7 +17,7 @@ HuggingFace under [`ramankrishna10/*`](https://huggingface.co/ramankrishna10).
 | Model              | Base                          | Method                    | Role                               | Status        |
 |--------------------|-------------------------------|---------------------------|------------------------------------|---------------|
 | **NPC Fast 1.7B**  | SmolLM2-1.7B-Instruct         | Full-weight CPT, 128K YaRN | Fast agentic router (`self` vs escalate) | Shipped + paper       |
-| **NPC Fin 32B**    | Qwen2.5-32B-Instruct          | QLoRA SFT (finance)       | Heavy finance reasoning            | Retired (legacy) |
+| **NPC Fin 32B**    | Qwen2.5-32B-Instruct          | QLoRA SFT, DeepSpeed ZeRO-3, 12× H100 | Crypto/finance reasoning, 93.6% CryptoQA | **Shipped on HF, paper draft ready** |
 | **NPC MoM Router** | n/a (FastAPI gateway)         | Code, not a model         | Routes traffic Fast → Fin          | Retired (replaced by direct vLLM) |
 | **NPC Fin-PRM 7B** | Qwen2.5-7B-Instruct           | QLoRA SFT (process reward) | DeFi-reasoning step verifier (4-dim scoring) | **Shipped on HF, paper in prep** |
 | **NPC Agentic 7B v1** | Qwen2.5-7B-Instruct        | QLoRA SFT (reasoning)     | General multi-step reasoning       | Privatized (quality issues) |

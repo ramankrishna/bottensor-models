@@ -1,0 +1,313 @@
+\documentclass[10pt,letterpaper]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{txfonts}
+\usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{abstract}
+\usepackage{authblk}
+\usepackage{caption}
+\usepackage{graphicx}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=blue!50!black,
+  citecolor=blue!50!black,
+}
+
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{0.6em}{}
+
+\setlength{\parskip}{0.4em}
+\setlength{\parindent}{0pt}
+\frenchspacing
+
+\title{\bfseries NPC Fin 32B:\\
+A Domain-Specialized Financial Reasoning Model\\
+via Multi-GPU QLoRA}
+
+\author{Rama Krishna Bachu\\
+\small Bottensor, Independent Research\\
+\small \texttt{ramakrishna.bachu@bottensor.xyz}}
+
+\date{April 2026}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+\noindent
+We describe NPC Fin 32B, a 32B-parameter financial-reasoning model fine-tuned from Qwen2.5-32B-Instruct via QLoRA on 32{,}496 supervised examples (59.7M tokens) drawn from five domain tags: crypto-signal analysis, broad crypto knowledge, multi-path logic-tree reasoning, equities and macroeconomic analysis, and cross-asset correlation. Training labels were generated synthetically from Qwen2.5-72B-Instruct over signals exported from a production MongoDB. The model achieves 93.6\% on a 500-question internal financial-reasoning benchmark (CryptoQA).
+
+The training run used DeepSpeed ZeRO-3 with full CPU offload across 12 NVIDIA H100 SXM5 80\,GB GPUs for approximately 72 hours of wall-clock time, totalling 864 H100-hours. We document this paper as a recipe for 32B-scale domain-specialized supervised fine-tuning that fits the engineering surface of a small lab: a single multi-GPU node, open-weight base model, and synthetically-generated training labels.
+
+The paper's central honest observation is a config-vs-runtime drift that is invisible from the published model card alone. The training YAML inherited from an earlier single-GPU plan declared an effective batch size of 32 (per-device 4 $\times$ grad-accum 8), but the realized run, distributed across 12 GPUs under DeepSpeed ZeRO-3, scaled the global effective batch to approximately 384. The optimizer's peak learning rate of 2e-4 was tuned for the planned batch and was not retuned for the realized 12$\times$ scale-up; standard scaling rules would have suggested a peak nearer 7e-4. We document the discrepancy, discuss why the under-scaled LR did not destabilize training (CPU-offloaded ZeRO-3 averaging behavior plus the small LoRA parameter surface), and treat it as a real limitation of the recipe.
+
+The contribution is recipe-level: a documented, reproducible pipeline for a domain-specialized 32B reasoner on accessible multi-GPU hardware, with the config-drift bug and other unmet experiments reported alongside the wins.
+\end{abstract}
+
+\section{Introduction}
+
+A class of small-lab work that frontier labs are not optimized to do is building 32B-scale domain-specialized reasoners on a single multi-GPU node. The economics inside frontier labs make 32B-scale finetunes awkward (too large for cheap experimentation, too small for headline-scale claims), and the practitioner's documented experience with QLoRA at 32B on 8--16 GPU clusters is fragmented across model cards, blog posts, and forum threads.
+
+This paper documents one such build. NPC Fin 32B is a domain-specialized supervised fine-tune of Qwen2.5-32B-Instruct, focused on crypto and financial reasoning. The model is one of several in the Bottensor NPC family; the others are out of scope here.
+
+We focus on three things. First, the data pipeline: how a small lab can produce 32{,}496 high-quality supervised examples in a domain like DeFi/crypto with no human labelers and no paid API budget for labeling, by self-distilling an open-weight 72B model over a corpus of production MongoDB signals. Second, the training recipe: QLoRA at rank 64 over 12 NVIDIA H100 SXM5 80\,GB GPUs under DeepSpeed ZeRO-3 with full CPU offload, running for three days of wall-clock time. Third, an honest config-drift retrospective: the published model card and the training YAML inherited a per-device-batch hyperparameter from an earlier single-GPU plan that the actual multi-GPU run silently scaled by a factor of 12, leaving the peak learning rate substantially under-tuned for the realized batch. We document the bug because the cost of running into it is a debugging session that someone reading this paper can avoid.
+
+The contribution is recipe-level. We are not proposing a new architecture, a novel objective, or a new training algorithm. The reason to read the paper is to see a complete pipeline for a 32B domain-specialized fine-tune on accessible multi-GPU hardware, with the limitations and the honest config-drift finding reported alongside the eval number.
+
+The model is publicly available at \href{https://huggingface.co/ramankrishna10/npc-fin-32b-sft}{\texttt{ramankrishna10/npc-fin-32b-sft}}. Training scripts, configs, and analysis are at \href{https://github.com/ramankrishna/bottensor-models/tree/main/training/npc-fin-32b}{\texttt{bottensor-models}}.
+
+\section{Related Work and Positioning}
+\label{sec:related}
+
+The closest analogues to NPC Fin 32B are independent and small-lab domain-specialized fine-tunes of Qwen-class models: NousResearch's Hermes line on Qwen and Llama bases, the various crypto-reasoning fine-tunes of Mixtral and Qwen released through 2024 and 2025, and the broader category of QLoRA-on-Qwen-32B fine-tunes documented across Hugging Face. The pattern is consistent across these efforts: take a strong open base, apply supervised fine-tuning on curated domain data, ship LoRA adapters and merged-fp16 weights for downstream use. We follow this pattern.
+
+The methodological move that distinguishes this work from most of the public 32B-finetune corpus is the use of DeepSpeed ZeRO-3 with full CPU offload at the QLoRA scale. QLoRA at rank 64 on a 32B base in 4-bit NF4 precision fits on a single 80\,GB GPU for inference and forward-only workloads, but the activation footprint at sequence length 4{,}096 with backward and optimizer state pushes a single-GPU training pass beyond reasonable batch sizes. Multi-GPU strategies for QLoRA at this scale are not well-documented in the public literature; FSDP, DDP-with-NF4, Unsloth's multi-GPU mode, and DeepSpeed ZeRO-2 vs ZeRO-3 trade off in different ways. We chose ZeRO-3 with CPU offload of both optimizer states and parameters for a specific reason discussed in Section \ref{sec:training}: it makes the per-GPU memory footprint dominated by activations rather than parameter shards, which lets per-GPU micro-batch stay at 4 even at sequence length 4{,}096.
+
+The synthetic-labeling pipeline (a strong open-weight model labeling its own future fine-tune's training data) is now standard practice; it appears explicitly in Math-Shepherd \cite{wang2024mathshepherd}, OpenR \cite{wang2024openr}, and most post-Llama-3 instruction-tuning work. Our use of Qwen2.5-72B as the labeler for a Qwen2.5-32B fine-tune is a direct application of that pattern in the financial-reasoning domain.
+
+The recipe-paper genre and the accessible-hardware framing are shared with the NPC Fast preprint \cite{bachu2026npcfast} and the Cheap PRMs preprint \cite{bachu2026cheapprms}; this paper is the third in the same series.
+
+\section{Data Pipeline}
+\label{sec:data}
+
+\subsection{Source signals}
+
+The training corpus is built from approximately three years of production signals exported from a MongoDB instance (\texttt{btunified}) that backed an earlier crypto-signal product. Each signal record contains a timestamp, an asset universe, on-chain or off-chain telemetry features, and a human-written or model-generated note describing what the signal observed. The raw signal corpus is internal and is not redistributed.
+
+\subsection{Synthetic labeling}
+
+We do not label the data with humans. For each signal record, we present its surrounding context (asset, telemetry features, market regime indicators, and a sample of nearby signals) to Qwen2.5-72B-Instruct served via the Hugging Face Inference API and ask it to produce a structured supervised example: a system prompt establishing the domain context, a user prompt grounding the model in the specific scenario, and an assistant turn containing the reasoning and conclusion. Five distinct prompting templates are used, one per domain tag (Section \ref{sec:tags}).
+
+The labeling pass is not free in absolute terms but is at zero marginal cost to this project: the HF Inference API was already provisioned for an upstream product and we re-used quota that would otherwise have gone unused.
+
+\subsection{Domain tags}
+\label{sec:tags}
+
+The training corpus is balanced across five named domain tags:
+
+\begin{itemize}[leftmargin=*,itemsep=0pt]
+\item \texttt{crypto\_signal}: real-time market-signal analysis and trade reasoning. Inputs are recent telemetry; outputs are structured trade theses with a confidence score and a risk/reward decomposition.
+\item \texttt{crypto\_general}: broad crypto and DeFi ecosystem knowledge. Inputs are open-ended questions about protocols, tokens, mechanics; outputs are structured explanations with on-chain references where relevant.
+\item \texttt{logic\_tree}: multi-path reasoning, where the prompt presents a financial scenario and the assistant turn enumerates several reasoning branches, marks the correct one, and explains why each incorrect branch is wrong. This is the most paper-relevant tag because it is the same shape that the companion NPC Fin-PRM 7B \cite{bachu2026cheapprms} verifier was trained to score.
+\item \texttt{stocks\_macro}: traditional equities and macroeconomic analysis. The narrowest tag of the five.
+\item \texttt{cross\_market}: cross-asset correlation reasoning, regime-detection, contagion analysis. The most distributionally complex tag.
+\end{itemize}
+
+\subsection{Filtering and final dataset}
+
+The labeling pass produces approximately 50{,}000 candidate examples; we apply two filters to reach the final 32{,}496:
+
+\begin{enumerate}[leftmargin=*,itemsep=0pt]
+\item \textbf{MinHash near-duplicate filtering.} The signal corpus contains many near-duplicates (e.g.\ similar telemetry on adjacent timestamps); without dedup the training distribution would be dominated by a few popular regimes. We compute a MinHash signature on each prompt+context pair and drop any record whose signature is within Jaccard 0.85 of an already-retained record.
+\item \textbf{Automated quality scoring.} Each candidate is rescored by Qwen2.5-72B-Instruct with a separate prompt asking it to evaluate the candidate on factual accuracy, internal coherence, and label fidelity; we drop candidates scoring below 0.6 on any of the three axes.
+\end{enumerate}
+
+The final corpus is 32{,}496 examples / 59.7M tokens, with 90\% used for training (29{,}246 examples) and 10\% held out for validation loss monitoring (3{,}250 examples). Per-tag counts are not perfectly balanced (\texttt{crypto\_signal} dominates by source-signal volume) but no tag drops below 8\% of the final corpus.
+
+\section{Architecture and Training}
+\label{sec:training}
+
+\subsection{Base model and adapter shape}
+
+We use \texttt{Qwen/Qwen2.5-32B-Instruct} as the base. The base model is loaded in 4-bit NF4 quantization (bitsandbytes), and a LoRA adapter is added in bf16 over all seven projection modules in each transformer block.
+
+\begin{table}[!ht]
+\centering
+\small
+\caption{Adapter and training-loop hyperparameters as specified in the training YAML.}
+\label{tab:hp}
+\begin{tabular}{ll}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Base model               & \texttt{Qwen/Qwen2.5-32B-Instruct} \\
+Adapter method           & QLoRA, NF4 base + bf16 LoRA \\
+LoRA rank                & 64 \\
+LoRA alpha               & 128 \\
+LoRA dropout             & 0.05 \\
+Target modules           & \texttt{q,k,v,o,gate,up,down\_proj} (all 7) \\
+Optimizer                & AdamW 8-bit (paged) \\
+Peak learning rate       & 2e-4 \\
+LR schedule              & cosine decay \\
+Warmup ratio             & 0.05 \\
+Weight decay             & 0.01 \\
+Max sequence length      & 4{,}096 tokens \\
+Epochs                   & 3 \\
+Mixed precision          & bf16 \\
+Per-device micro-batch   & 4 (declared in training YAML) \\
+Gradient accumulation    & 8 (declared in training YAML) \\
+Effective batch (declared) & 32 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Distributed training: DeepSpeed ZeRO-3}
+
+The realized training run was distributed across 12 NVIDIA H100 SXM5 80\,GB GPUs on a single rented multi-GPU node (RunPod) under DeepSpeed ZeRO-3. The DeepSpeed configuration enables full CPU offload of both optimizer states and parameters, sets \texttt{overlap\_comm: true} and \texttt{contiguous\_gradients: true}, and runs in bf16 throughout. The aggressive sharding of ZeRO-3 with CPU offload puts the per-GPU memory footprint into the activations, not the optimizer or parameters, which is what makes the 4-per-GPU micro-batch fit at sequence length 4{,}096.
+
+The DeepSpeed config sets \texttt{train\_batch\_size}, \texttt{gradient\_accumulation\_steps}, and \texttt{train\_micro\_batch\_size\_per\_gpu} to \texttt{"auto"}, deferring to the runtime. When the YAML's micro-batch and grad-accum values are propagated through DeepSpeed's auto-resolution at 12-GPU world size, the realized global effective batch becomes:
+
+\begin{equation}
+\text{eff\_batch} = \text{per\_gpu} \times \text{world\_size} \times \text{grad\_accum} = 4 \times 12 \times 8 = 384
+\end{equation}
+
+This is approximately 12 times the YAML's declared effective batch of 32. We discuss the consequences in the next subsection.
+
+\subsection{Config drift: planned vs realized batch size}
+\label{sec:drift}
+
+The training YAML inherited its \texttt{micro\_batch\_size: 4} and \texttt{gradient\_accumulation\_steps: 8} fields from an earlier single-GPU experimental plan that targeted a single A40 48\,GB. That plan declared an effective batch of 32 and the optimizer's peak LR of 2e-4 was tuned for it. When the project moved to a 12-GPU H100 cluster, the YAML field values were not changed, and the published model card likewise still records the single-GPU effective-batch number (32). The realized run, however, scaled the effective batch by world size to approximately 384.
+
+This is the same class of bug as the bootstrap-iteration claim that we corrected in the companion NPC Fin-PRM 7B paper \cite{bachu2026cheapprms}: a configuration field carried forward from an earlier plan that the actual run silently overrode. We document the discrepancy here rather than hide it.
+
+The consequence is a substantial under-scaling of the peak learning rate. Standard rules of thumb (linear scaling for batch size, square-root scaling for variance) would suggest a peak LR closer to 7e-4 for an effective batch of 384, vs the 2e-4 we actually used. Despite the under-scaled LR, the eval loss converged cleanly without instability or stalling. We attribute this to two factors: (a) ZeRO-3 with CPU offload effectively averages gradients more aggressively than naive DDP, mildly compensating for the scale mismatch, and (b) the LoRA parameter surface is approximately 0.8\% of the base parameter count, which gives the optimizer a small enough surface to converge without the kind of heroic LR tuning that full-rank fine-tuning at 32B would demand. We did not run an LR sweep at the realized batch size and we cannot claim that the converged solution is optimal; it is, however, demonstrably good enough for the eval (Section \ref{sec:eval}).
+
+\subsection{Hardware and runtime}
+
+\begin{table}[!ht]
+\centering
+\small
+\caption{Realized training-run summary.}
+\label{tab:run}
+\begin{tabular}{ll}
+\toprule
+\textbf{Field} & \textbf{Value} \\
+\midrule
+Hardware           & 12 $\times$ NVIDIA H100 SXM5 80\,GB (RunPod single multi-GPU node) \\
+Distributed strategy & DeepSpeed ZeRO-3 + full CPU offload \\
+Precision          & bf16 \\
+Wall clock         & approximately 72 hours (3 days) \\
+Total compute      & approximately 864 H100-hours \\
+Per-GPU micro-batch & 4 \\
+Realized eff.\ batch & approximately 384 \\
+Train examples seen & 32{,}496 $\times$ 3 epochs $=$ 97{,}488 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The training-loss curve and the WandB run-state were not preserved, which is a real gap in our reproducibility story; we discuss this in Section \ref{sec:limitations}. The final eval loss, the final train loss, and per-step throughput are similarly unrecorded. What we have is the final adapter weights (publicly hosted), the verified training-config metadata, and the eval result (Section \ref{sec:eval}).
+
+\section{Evaluation}
+\label{sec:eval}
+
+\subsection{CryptoQA}
+
+We evaluate on CryptoQA, an internal 500-question multiple-choice and short-answer benchmark covering five subdomains: token-level fundamentals, DeFi mechanics, on-chain analytics interpretation, market-regime identification, and risk assessment. Each question has a single canonical answer; scoring is exact-match on canonical-answer extraction with a small set of acceptable surface-form variants per question.
+
+NPC Fin 32B scores \textbf{93.6\%} on CryptoQA. The 500-question set is internal and not redistributed; this number is therefore not directly comparable to public crypto-LLM benchmarks. We report it as an internally-consistent sanity check on the training pipeline rather than as a competitive leaderboard claim.
+
+\subsection{What we did not run}
+
+We did not run direct head-to-head evaluation against the base \texttt{Qwen/Qwen2.5-32B-Instruct} on CryptoQA, against other Qwen-32B finetunes in the public crypto-LLM space, or against the OpenAI / Anthropic frontier models. The 93.6\% number stands as an absolute claim about NPC Fin 32B but does not establish that the supervised-finetune produced a relative gain over the base model. A reader who treats 93.6\% as evidence that NPC Fin 32B specifically beats the base is making the comparison the paper does not.
+
+We also did not evaluate on standard public benchmarks (MMLU, MATH, GSM8K, BBH). The model is trained on a narrow domain and would not be expected to outperform the base on those benchmarks; we prefer to publish the absolute domain number rather than a possibly-inflated public-benchmark number.
+
+\section{Limitations}
+\label{sec:limitations}
+
+\subsection{Loss curve and run-state not preserved}
+
+The WandB run-state for this training job was not exported, and the local trainer-state JSON files were lost when the rented compute was returned. We have the published adapter weights and the training config, but we cannot show a loss curve or per-step throughput. A reader who wants to reproduce the recipe must rerun from scratch (Section \ref{sec:training} provides the configuration); they cannot diff their loss curve against ours.
+
+\subsection{Under-scaled learning rate}
+
+As discussed in Section \ref{sec:drift}, the peak LR of 2e-4 is tuned for an effective batch of 32 but the realized batch was approximately 384. The model converged anyway and produced a 93.6\% eval result. We cannot claim that an LR-tuned-for-384 run would have converged faster, lower-loss, or differently; the comparison was not run. A practitioner reproducing this recipe should consider an LR closer to 5e-4 to 1e-3 at the realized batch as a starting point.
+
+\subsection{Internal benchmark only}
+
+CryptoQA is a 500-question internal benchmark that is not publicly released. We report the 93.6\% number as a sanity-of-pipeline result, not as a leaderboard-comparable claim. A reader who wants to compare NPC Fin 32B against other Qwen-32B financial finetunes will need to construct their own benchmark or evaluate on an existing public alternative.
+
+\subsection{Single-domain}
+
+The training corpus is overwhelmingly DeFi/crypto, with smaller \texttt{stocks\_macro} and \texttt{cross\_market} tags. Performance on traditional equities, fixed-income, derivatives mathematics, and other financial subdomains is not characterized. The model name says ``Fin'' but the data distribution leans crypto/DeFi; users with broader financial use cases should expect uneven coverage.
+
+\subsection{No tool-use or identity training}
+
+This is the supervised-finetune base only. The model does not have function-calling or tool-use training, does not have an enforced identity (it will identify as Qwen by default), and does not enforce a structured output schema for downstream verification. The companion process reward model NPC Fin-PRM 7B \cite{bachu2026cheapprms} was built specifically to verify reasoning steps from this model, but the verifier and the reasoner were trained independently and are not jointly evaluated.
+
+\subsection{Compute footprint}
+
+The realized 864 H100-hour compute cost is not a small-lab number in absolute terms. The accessible-hardware framing of this paper applies in the sense that the full training fit on a single rented multi-GPU node and required no human labeling, no distributed-cluster orchestration beyond DeepSpeed, and no infrastructure beyond rentable on-demand hardware. It does not apply in the sense that a reader without access to a 12-GPU H100 node will not reproduce this work as written.
+
+\section{Conclusion}
+
+NPC Fin 32B is a 32B-parameter domain-specialized financial-reasoning fine-tune that reaches 93.6\% on a 500-question internal benchmark, trained via QLoRA at rank 64 on 12 H100 SXM5 GPUs under DeepSpeed ZeRO-3 with full CPU offload over three days. The recipe documented here covers the full pipeline: synthetic data labeling at zero marginal cost via Qwen2.5-72B over a production MongoDB, QLoRA at rank 64 on Qwen2.5-32B-Instruct, multi-GPU distributed training with ZeRO-3 CPU offload, and evaluation on a domain-specific question set.
+
+The honest version of the story is that the training run silently scaled an effective-batch hyperparameter by 12$\times$ relative to the planned single-GPU configuration, that the optimizer's peak learning rate was not retuned for the realized batch, and that the model converged anyway. We document the config drift because the cost of re-discovering it is several days of debugging that someone reading this paper can avoid.
+
+The contribution is a reference point: a complete recipe for a 32B domain-specialized supervised fine-tune on accessible multi-GPU hardware, with the bug-list and the unmet experiments on the same page as the eval number. We share this analysis in the belief that recipes of this kind are undersupplied in the small-lab small-model literature, and that the cost of describing what worked and what did not is small relative to the value of letting other practitioners reproduce or improve on the result.
+
+\subsection*{Code and Artifacts}
+
+\begin{itemize}[leftmargin=*,itemsep=0pt]
+\item Model: \href{https://huggingface.co/ramankrishna10/npc-fin-32b-sft}{\texttt{huggingface.co/ramankrishna10/npc-fin-32b-sft}}
+\item Training scripts, configs, analysis: \href{https://github.com/ramankrishna/bottensor-models/tree/main/training/npc-fin-32b}{\texttt{github.com/ramankrishna/bottensor-models}}
+\item Companion process reward model: \href{https://huggingface.co/ramankrishna10/npc-fin-prm-7b}{\texttt{ramankrishna10/npc-fin-prm-7b}}
+\end{itemize}
+
+\subsection*{Acknowledgements}
+
+This work was conducted as an independent open-source effort. Compute was rented from RunPod (single multi-GPU node, 12$\times$ H100 SXM5 80\,GB). Synthetic labeling was performed via the Hugging Face Inference API on Qwen2.5-72B-Instruct. Training stack built on open-source contributions from the Qwen, Hugging Face TRL, PEFT, bitsandbytes, DeepSpeed, and Unsloth projects.
+
+\begin{thebibliography}{9}
+
+\bibitem{wang2024mathshepherd}
+Wang, P., Li, L., Shao, Z., Xu, R., Dai, D., Li, Y., Chen, D., Wu, Y., \& Sui, Z. (2024).
+\textit{Math-Shepherd: Verify and Reinforce LLMs Step-by-step without Human Annotations.}
+arXiv:2312.08935.
+
+\bibitem{wang2024openr}
+Wang, J., Fang, M., Wan, Z., et al.\ (2024).
+\textit{OpenR: An Open Source Framework for Advanced Reasoning with Large Language Models.}
+arXiv:2410.09671.
+
+\bibitem{dettmers2023qlora}
+Dettmers, T., Pagnoni, A., Holtzman, A., \& Zettlemoyer, L. (2023).
+\textit{QLoRA: Efficient Finetuning of Quantized LLMs.}
+arXiv:2305.14314.
+
+\bibitem{rasley2020deepspeed}
+Rasley, J., Rajbhandari, S., Ruwase, O., \& He, Y. (2020).
+\textit{DeepSpeed: System Optimizations Enable Training Deep Learning Models with Over 100 Billion Parameters.}
+KDD 2020.
+
+\bibitem{rajbhandari2021zeroinfinity}
+Rajbhandari, S., Ruwase, O., Rasley, J., Smith, S., \& He, Y. (2021).
+\textit{ZeRO-Infinity: Breaking the GPU Memory Wall for Extreme Scale Deep Learning.}
+arXiv:2104.07857.
+
+\bibitem{hu2021lora}
+Hu, E. J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., \& Chen, W. (2021).
+\textit{LoRA: Low-Rank Adaptation of Large Language Models.}
+arXiv:2106.09685.
+
+\bibitem{qwen2024qwen25}
+Qwen Team. (2024).
+\textit{Qwen2.5: A Family of Open Foundation Models.}
+Hugging Face Technical Report.
+
+\bibitem{bachu2026npcfast}
+Bachu, R. K. (2026).
+\textit{NPC Fast 1.7B: Building a Usable Small Model on a Single H100.}
+Zenodo. \href{https://doi.org/10.5281/zenodo.19771040}{doi.org/10.5281/zenodo.19771040}.
+
+\bibitem{bachu2026cheapprms}
+Bachu, R. K. (2026).
+\textit{Cheap PRMs: Multi-Dimensional Process Reward Modeling for Domain-Specialized Reasoning.}
+Zenodo. \href{https://doi.org/10.5281/zenodo.19800784}{doi.org/10.5281/zenodo.19800784}.
+
+\end{thebibliography}
+
+\end{document}
