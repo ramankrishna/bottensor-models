@@ -16,6 +16,7 @@
 \usepackage{authblk}
 \usepackage{caption}
 \usepackage{graphicx}
+\usepackage{float}
 
 \hypersetup{
   colorlinks=true,
@@ -121,9 +122,9 @@ The final corpus is 32{,}496 examples / 59.7M tokens, with 90\% used for trainin
 
 \subsection{Base model and adapter shape}
 
-We use \texttt{Qwen/Qwen2.5-32B-Instruct} as the base. The base model is loaded in 4-bit NF4 quantization (bitsandbytes), and a LoRA adapter is added in bf16 over all seven projection modules in each transformer block.
+We use \texttt{Qwen/Qwen2.5-32B-Instruct} as the base. The base model is loaded in 4-bit NF4 quantization (bitsandbytes), and a LoRA adapter is added in bf16 over all seven projection modules in each transformer block. Table~\ref{tab:hp} summarizes the adapter and training-loop hyperparameters as declared in the training YAML.
 
-\begin{table}[!ht]
+\begin{table}[H]
 \centering
 \small
 \caption{Adapter and training-loop hyperparameters as specified in the training YAML.}
@@ -157,7 +158,7 @@ Effective batch (declared) & 32 \\
 
 The realized training run was distributed across 12 NVIDIA H100 SXM5 80\,GB GPUs on a single rented multi-GPU node (RunPod) under DeepSpeed ZeRO-3. The DeepSpeed configuration enables full CPU offload of both optimizer states and parameters, sets \texttt{overlap\_comm: true} and \texttt{contiguous\_gradients: true}, and runs in bf16 throughout. The aggressive sharding of ZeRO-3 with CPU offload puts the per-GPU memory footprint into the activations, not the optimizer or parameters, which is what makes the 4-per-GPU micro-batch fit at sequence length 4{,}096.
 
-The DeepSpeed config sets \texttt{train\_batch\_size}, \texttt{gradient\_accumulation\_steps}, and \texttt{train\_micro\_batch\_size\_per\_gpu} to \texttt{"auto"}, deferring to the runtime. When the YAML's micro-batch and grad-accum values are propagated through DeepSpeed's auto-resolution at 12-GPU world size, the realized global effective batch becomes:
+The DeepSpeed config sets all three batch-related fields (\texttt{train\_batch\_size}, \texttt{gradient\_accumulation\_steps}, and the per-GPU micro-batch) to \texttt{"auto"}, deferring to the runtime. When the YAML's micro-batch and grad-accum values are propagated through DeepSpeed's auto-resolution at 12-GPU world size, the realized global effective batch becomes:
 
 \begin{equation}
 \text{eff\_batch} = \text{per\_gpu} \times \text{world\_size} \times \text{grad\_accum} = 4 \times 12 \times 8 = 384
@@ -176,7 +177,9 @@ The consequence is a substantial under-scaling of the peak learning rate. Standa
 
 \subsection{Hardware and runtime}
 
-\begin{table}[!ht]
+Table~\ref{tab:run} summarizes the realized run.
+
+\begin{table}[H]
 \centering
 \small
 \caption{Realized training-run summary.}
