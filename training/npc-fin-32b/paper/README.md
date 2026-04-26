@@ -1,6 +1,31 @@
 # Paper — NPC Fin 32B
 
-> **Status: draft complete (7 pages). All numbers locked from the published HF model card + verified config-vs-runtime drift discussion. Ready for Zenodo upload.**
+> **Status: PUBLISHED on Zenodo (2026-04-27). DOI: [10.5281/zenodo.19802598](https://doi.org/10.5281/zenodo.19802598).**
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19802598.svg)](https://doi.org/10.5281/zenodo.19802598)
+
+## Cite
+
+> Bachu, R. K. (2026). *NPC Fin 32B: A Domain-Specialized Financial
+> Reasoning Model via Multi-GPU QLoRA.* Zenodo.
+> https://doi.org/10.5281/zenodo.19802598
+
+```bibtex
+@misc{bachu2026npcfin32b,
+  title     = {NPC Fin 32B: A Domain-Specialized Financial Reasoning
+               Model via Multi-GPU QLoRA},
+  author    = {Bachu, Rama Krishna},
+  year      = {2026},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.19802598},
+  url       = {https://doi.org/10.5281/zenodo.19802598},
+  note      = {Preprint},
+}
+```
+
+---
+
+
 
 LaTeX source and compiled PDF for the third paper in the NPC family.
 

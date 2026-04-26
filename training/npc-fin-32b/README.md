@@ -91,16 +91,20 @@ output is at [`../npc-fin-prm-7b/`](../npc-fin-prm-7b/) — see the
 
 ## Citation
 
-The paper draft in `paper/` will mint a DOI on Zenodo. Until then:
+> Bachu, R. K. (2026). *NPC Fin 32B: A Domain-Specialized Financial
+> Reasoning Model via Multi-GPU QLoRA.* Zenodo.
+> https://doi.org/10.5281/zenodo.19802598
 
 ```bibtex
 @misc{bachu2026npcfin32b,
-  title  = {NPC Fin 32B: A Domain-Specialized Financial Reasoning Model
-            via Multi-GPU QLoRA},
-  author = {Bachu, Rama Krishna},
-  year   = {2026},
-  note   = {Preprint, in preparation. Model:
-            https://huggingface.co/ramankrishna10/npc-fin-32b-sft},
+  title     = {NPC Fin 32B: A Domain-Specialized Financial Reasoning
+               Model via Multi-GPU QLoRA},
+  author    = {Bachu, Rama Krishna},
+  year      = {2026},
+  publisher = {Zenodo},
+  doi       = {10.5281/zenodo.19802598},
+  url       = {https://doi.org/10.5281/zenodo.19802598},
+  note      = {Preprint},
 }
 ```
 

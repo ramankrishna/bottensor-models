@@ -2,6 +2,7 @@
 
 [![NPC Fast DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19771040.svg)](https://doi.org/10.5281/zenodo.19771040)
 [![Cheap PRMs DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19800784.svg)](https://doi.org/10.5281/zenodo.19800784)
+[![NPC Fin 32B DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19802598.svg)](https://doi.org/10.5281/zenodo.19802598)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 Training scripts and configs for the **NPC Model Family** by
@@ -98,7 +99,7 @@ Apache-2.0 — see [LICENSE](LICENSE).
 
 ## Citation
 
-Two preprints accompany the family. Cite whichever you build on:
+Three preprints accompany the family. Cite whichever you build on:
 
 ### NPC Fast 1.7B — single-H100 small-model recipe
 
@@ -110,6 +111,12 @@ Two preprints accompany the family. Cite whichever you build on:
 > Bachu, R. K. (2026). *Cheap PRMs: Multi-Dimensional Process Reward
 > Modeling for Domain-Specialized Reasoning.* Zenodo.
 > https://doi.org/10.5281/zenodo.19800784
+
+### NPC Fin 32B — multi-GPU QLoRA recipe at 32B scale
+
+> Bachu, R. K. (2026). *NPC Fin 32B: A Domain-Specialized Financial
+> Reasoning Model via Multi-GPU QLoRA.* Zenodo.
+> https://doi.org/10.5281/zenodo.19802598
 
 BibTeX:
 
@@ -132,6 +139,17 @@ BibTeX:
   publisher    = {Zenodo},
   doi          = {10.5281/zenodo.19800784},
   url          = {https://doi.org/10.5281/zenodo.19800784},
+  note         = {Preprint},
+}
+
+@misc{bachu2026npcfin32b,
+  title        = {NPC Fin 32B: A Domain-Specialized Financial Reasoning
+                  Model via Multi-GPU QLoRA},
+  author       = {Bachu, Rama Krishna},
+  year         = {2026},
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.19802598},
+  url          = {https://doi.org/10.5281/zenodo.19802598},
   note         = {Preprint},
 }
 ```
