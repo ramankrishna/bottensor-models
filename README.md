@@ -15,15 +15,17 @@ HuggingFace under [`ramankrishna10/*`](https://huggingface.co/ramankrishna10).
 
 | Model              | Base                          | Method                    | Role                               | Status        |
 |--------------------|-------------------------------|---------------------------|------------------------------------|---------------|
-| **NPC Fast 1.7B**  | SmolLM2-1.7B-Instruct         | Full-weight CPT, 128K YaRN | Fast agentic router (`self` vs escalate) | Shipped       |
+| **NPC Fast 1.7B**  | SmolLM2-1.7B-Instruct         | Full-weight CPT, 128K YaRN | Fast agentic router (`self` vs escalate) | Shipped + paper       |
 | **NPC Fin 32B**    | Qwen2.5-32B-Instruct          | QLoRA SFT (finance)       | Heavy finance reasoning            | Retired (legacy) |
 | **NPC MoM Router** | n/a (FastAPI gateway)         | Code, not a model         | Routes traffic Fast → Fin          | Retired (replaced by direct vLLM) |
+| **NPC Fin-PRM 7B** | Qwen2.5-7B-Instruct           | QLoRA SFT (process reward) | DeFi-reasoning step verifier (4-dim scoring) | **Shipped on HF, paper in prep** |
 | **NPC Agentic 7B v1** | Qwen2.5-7B-Instruct        | QLoRA SFT (reasoning)     | General multi-step reasoning       | Privatized (quality issues) |
 | **NPC Agentic 7B v2** | Qwen2.5-7B-Instruct        | QLoRA SFT (reasoning, v1 fixes baked in) | General multi-step reasoning   | Training (this branch) |
 
 HuggingFace targets:
 
 - `ramankrishna10/npc-fast-1.7b`, `-gptq`, `-gguf`
+- `ramankrishna10/npc-fin-prm-7b` — process reward model (public)
 - `ramankrishna10/npc-agentic-7b` (+ `-merged`, `-gptq`, `-gguf`) — currently private until v2 ships
 
 ## Layout
@@ -34,6 +36,7 @@ bottensor-models/
 │   ├── npc-fast-1.7b/        # Full-weight CPT pipeline (H200)
 │   ├── npc-fin-32b/          # README only — legacy reference
 │   ├── npc-mom-router/       # FastAPI gateway (retired)
+│   ├── npc-fin-prm-7b/       # Process reward model — eval harness + analysis
 │   ├── npc-agentic-7b-v1/    # First reasoning run (lessons learned)
 │   └── npc-agentic-7b-v2/    # Current reasoning run with v1 fixes
 ├── shared/

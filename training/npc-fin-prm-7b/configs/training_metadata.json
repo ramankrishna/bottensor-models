@@ -1,0 +1,40 @@
+{
+  "base_model": "Qwen/Qwen2.5-7B-Instruct",
+  "quantization": "4bit",
+  "lora_config": {
+    "r": 32,
+    "alpha": 64,
+    "dropout": 0.05,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ]
+  },
+  "training_config": {
+    "epochs": 3,
+    "batch_size": 2,
+    "gradient_accumulation_steps": 8,
+    "learning_rate": 0.0002,
+    "lr_scheduler": "cosine",
+    "warmup_ratio": 0.05,
+    "max_seq_length": 2048,
+    "bf16": true
+  },
+  "dataset_stats": {
+    "train_examples": 37542,
+    "val_examples": 4171
+  },
+  "results": {
+    "train_loss": 0.25181230885952716,
+    "eval_loss": 0.21678349375724792,
+    "elapsed_seconds": 62600.10093379021,
+    "peak_vram_gb": 23.689548015594482
+  },
+  "dry_run": false,
+  "timestamp": "2026-03-21T21:06:36.174888+00:00"
+}

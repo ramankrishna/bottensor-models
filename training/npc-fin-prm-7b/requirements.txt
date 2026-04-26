@@ -1,0 +1,28 @@
+# NPC Fin-PRM 7B — eval harness deps
+#
+# The original training run used the same stack as npc-agentic-7b-v1/v2
+# (Unsloth + TRL SFTTrainer). For the eval harness alone, you only
+# need a subset:
+
+# ── Core inference ──────────────────────────────────────────────────
+torch>=2.10.0
+transformers>=4.57.0,<=5.5.0
+peft>=0.18.0
+accelerate>=0.34.0
+bitsandbytes>=0.49.0       # 4-bit NF4 base loading on CUDA
+huggingface-hub>=0.26.0
+
+# ── Eval data + smoke tests ─────────────────────────────────────────
+datasets>=3.0.0            # GSM8K, MATH-500 OOD test set
+sentencepiece>=0.2.0
+protobuf>=4.25.0
+
+# ── Optional (only if you re-run the bootstrap loop / re-train) ─────
+# unsloth>=2025.10.0
+# unsloth_zoo>=2025.10.0
+# trl>=0.24.0
+# wandb>=0.18.0
+
+# ── Misc ────────────────────────────────────────────────────────────
+tqdm>=4.66.0
+numpy>=1.26.0

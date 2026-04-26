@@ -1,0 +1,149 @@
+{
+  "dataset": {
+    "val_examples_total": 4171,
+    "json_parse_failures": 0,
+    "json_parse_success_rate": 1.0,
+    "rating_distribution": {
+      "STRONG": 2320,
+      "ACCEPTABLE_WITH_ISSUES": 1255,
+      "FLAWED": 596
+    },
+    "error_type_distribution": {
+      "LOGICAL_FALLACY": 985,
+      "OMISSION": 613,
+      "UNJUSTIFIED_CONFIDENCE": 77,
+      "FACTUAL_ERROR": 45,
+      "LOGICAL_LEAP": 1
+    },
+    "score_distribution": {
+      "mean": 0.7256653080795972,
+      "median": 0.84,
+      "stdev": 0.1766064524121135,
+      "min": 0.11,
+      "max": 0.955
+    },
+    "step_depth_distribution": {
+      "4": 412,
+      "2": 910,
+      "1": 931,
+      "0": 950,
+      "3": 894,
+      "5": 67,
+      "6": 5,
+      "7": 2
+    }
+  },
+  "per_dimension_stats": {
+    "factual_accuracy": {
+      "n": 4171,
+      "mean": 0.8756173579477343,
+      "stdev": 0.14533949778740332,
+      "min": 0.0,
+      "max": 1.0
+    },
+    "logical_validity": {
+      "n": 4171,
+      "mean": 0.6594821385758811,
+      "stdev": 0.23967277923817618,
+      "min": 0.1,
+      "max": 0.95
+    },
+    "completeness": {
+      "n": 4171,
+      "mean": 0.6923759290338048,
+      "stdev": 0.16925748023261555,
+      "min": 0.2,
+      "max": 0.9
+    },
+    "risk_awareness": {
+      "n": 4171,
+      "mean": 0.6333013665787581,
+      "stdev": 0.21215997774981848,
+      "min": 0.05,
+      "max": 0.95
+    }
+  },
+  "rating_score_partition": {
+    "STRONG": {
+      "n": 2320,
+      "score_min": 0.8,
+      "score_max": 0.955,
+      "score_mean": 0.8607047413793103
+    },
+    "FLAWED": {
+      "n": 596,
+      "score_min": 0.11,
+      "score_max": 0.49,
+      "score_mean": 0.3901342281879195
+    },
+    "ACCEPTABLE_WITH_ISSUES": {
+      "n": 1255,
+      "score_min": 0.5,
+      "score_max": 0.795,
+      "score_mean": 0.6353745019920318
+    }
+  },
+  "interdimension_spearman": {
+    "factual_accuracy__logical_validity": 0.743166708408366,
+    "factual_accuracy__completeness": 0.7721208741339102,
+    "factual_accuracy__risk_awareness": 0.7147421778641506,
+    "logical_validity__completeness": 0.8506697547128842,
+    "logical_validity__risk_awareness": 0.9159035051066151,
+    "completeness__risk_awareness": 0.8628465198210731
+  },
+  "overall_vs_dim_spearman": {
+    "factual_accuracy": 0.7615339179942872,
+    "logical_validity": 0.955383255453245,
+    "completeness": 0.8639348889552693,
+    "risk_awareness": 0.9494584765086134
+  },
+  "training_run": {
+    "global_step": 7041,
+    "epoch": 3.0,
+    "max_steps": 7041,
+    "iteration_claim_in_card": "3 bootstrapped iterations",
+    "iteration_actual": "3 epochs of vanilla SFT (no LR resets, no loss spikes \u2014 single training run)",
+    "lr_resets_detected": 0,
+    "loss_spikes_detected": 0
+  },
+  "training_config": {
+    "base_model": "Qwen/Qwen2.5-7B-Instruct",
+    "quantization": "4bit",
+    "lora_config": {
+      "r": 32,
+      "alpha": 64,
+      "dropout": 0.05,
+      "target_modules": [
+        "q_proj",
+        "k_proj",
+        "v_proj",
+        "o_proj",
+        "gate_proj",
+        "up_proj",
+        "down_proj"
+      ]
+    },
+    "training_config": {
+      "epochs": 3,
+      "batch_size": 2,
+      "gradient_accumulation_steps": 8,
+      "learning_rate": 0.0002,
+      "lr_scheduler": "cosine",
+      "warmup_ratio": 0.05,
+      "max_seq_length": 2048,
+      "bf16": true
+    },
+    "dataset_stats": {
+      "train_examples": 37542,
+      "val_examples": 4171
+    },
+    "results": {
+      "train_loss": 0.25181230885952716,
+      "eval_loss": 0.21678349375724792,
+      "elapsed_seconds": 62600.10093379021,
+      "peak_vram_gb": 23.689548015594482
+    },
+    "dry_run": false,
+    "timestamp": "2026-03-21T21:06:36.174888+00:00"
+  }
+}
