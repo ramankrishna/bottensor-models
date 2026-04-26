@@ -71,7 +71,7 @@ This paper documents one attempt at both choices: a 7B PRM for DeFi/crypto finan
     \item How well does the resulting model rank steps, and how well does its score scale function as a probability of error?
 \end{enumerate}
 
-We answer all three quantitatively. The model ranks steps well (Spearman 0.92 on a held-out test split), the four dimensions are not independent (three cluster at $\rho \in [0.85, 0.92]$), and the score scale is miscalibrated as a probability (ECE 0.21) despite the strong rank correlation. We report the recipe, the two-line bug list, and the limitations in the same document as the wins. The contribution is recipe-level, not method-level.
+We answer all three quantitatively. The model ranks steps well (Spearman 0.92 on a held-out test split), the four dimensions are not independent (three cluster at $\rho \in [0.85, 0.92]$), and the score scale is miscalibrated as a probability (ECE 0.21) despite the strong rank correlation. We report the recipe and the limitations in the same document as the wins. The contribution is recipe-level, not method-level.
 
 The model is publicly available: \href{https://huggingface.co/ramankrishna10/npc-fin-prm-7b}{\texttt{ramankrishna10/npc-fin-prm-7b}}. Training scripts, eval harness, and analysis scripts are at \href{https://github.com/ramankrishna/bottensor-models/tree/main/training/npc-fin-prm-7b}{\texttt{bottensor-models}}.
 
@@ -93,7 +93,7 @@ The cheap-recipe positioning of this paper is shared with the NPC Fast preprint 
 
 We start from a corpus of 4{,}866 reasoning ``logic trees,'' each consisting of a DeFi/crypto scenario followed by 1--7 reasoning steps that collectively analyze the scenario (token price moves, on-chain events, exploit hypotheses, treasury decisions, etc.). The tree corpus is internal and not redistributed.
 
-Each step within each tree becomes one labeled training example. With an average tree depth of approximately 16 reasoning steps when including alternative branches, the corpus yields approximately 80{,}000 labelable step records. After filtering for valid judge JSON output and length, we obtain 41{,}713 final examples (37{,}542 train, 4{,}171 validation).
+Each step within each tree becomes one labeled training example. With an average tree depth of approximately 16 reasoning steps when including alternative branches, the corpus yields approximately 80{,}000 labelable step records. We retain a step record only if (a) the judge output parses as valid JSON against the schema, (b) the full prompt+context fits within the 2{,}048-token training context, (c) the reasoning chain it belongs to passes a MinHash near-duplicate filter against the rest of the corpus, and (d) the chain meets minimum quality heuristics ($\geq$3 reasoning steps, contains specific metrics or levels, internally consistent, no hallucinated token names). The exact per-filter drop counts were not preserved in the training metadata; the cumulative effect reduces 80{,}000 candidate step records to 41{,}713 retained examples (37{,}542 train, 4{,}171 validation), a 47.9\% retention rate.
 
 \subsection{Judge labeling}
 
@@ -113,7 +113,7 @@ For each step, we present its surrounding context (scenario plus prior steps) to
 \}
 \end{quote}
 
-The judge is Qwen2.5-72B-Instruct served via the Together API. The labeling prompt instructs the judge to score each dimension independently on a 0--1 scale, with a brief justification per dimension and a single ``error\_identified'' tag drawn from a closed set when the rating is below \texttt{STRONG}.
+The judge is Qwen2.5-72B-Instruct, served locally on the same H100 via vLLM. Local serving keeps the marginal labeling cost at zero --- the only compute cost for the labeling pipeline is the H100-hours already rented for training, amortized across both jobs. The labeling prompt instructs the judge to score each dimension independently on a 0--1 scale, with a brief justification per dimension and a single ``error\_identified'' tag drawn from a closed set when the rating is below \texttt{STRONG}.
 
 We confirm post-hoc that the JSON parse-failure rate on the held-out validation set is exactly 0 of 4{,}171 records (Section~\ref{sec:eval}). The judge is robust at this output schema.
 
@@ -346,7 +346,7 @@ We rely on judge-model labels throughout. A human-eval pass on a 100--200-step s
 
 We trained a 7B Process Reward Model for DeFi/crypto reasoning in 17.4 hours of single-H100 wall clock for approximately \$25 of compute, using only judge-model labels from Qwen2.5-72B over 4{,}866 reasoning trees. On a stratified 200-example held-out test, the model achieves Spearman 0.92 against the judge labels and matches the published card's headline numbers. We report two findings the model card does not: the four labeled dimensions are not independent (three cluster at $\rho \in [0.85, 0.92]$), and the score scale is miscalibrated (ECE 0.21) despite the strong rank correlation.
 
-The contribution is recipe-level. We document a complete pipeline for building a domain-specialized PRM on accessible hardware, with the bug list and the unmet experiments reported alongside the wins. We share this analysis in the belief that recipes of this kind are undersupplied in the PRM literature, and that the cost of describing the failures is small relative to the value of letting other practitioners reproduce or improve on the result.
+The contribution is recipe-level. We document a complete pipeline for building a domain-specialized PRM on accessible hardware, with the unmet experiments reported alongside the wins. We share this analysis in the belief that recipes of this kind are undersupplied in the PRM literature, and that the cost of describing the failures is small relative to the value of letting other practitioners reproduce or improve on the result.
 
 \subsection*{Code and Artifacts}
 
@@ -357,7 +357,7 @@ The contribution is recipe-level. We document a complete pipeline for building a
 
 \subsection*{Acknowledgements}
 
-This work was conducted as an independent open-source effort. Compute for training was rented from Hyperbolic (single H100); evaluation was performed on a 24\,GB Apple M5 laptop using MLX 4-bit quantization. Training stack built on open-source contributions from the Qwen, Hugging Face TRL, PEFT, bitsandbytes, and Unsloth projects.
+This work was conducted as an independent open-source effort. Compute for both training and judge labeling was rented from Hyperbolic (single H100); evaluation was performed on a 24\,GB Apple M5 laptop using MLX 4-bit quantization. Training stack built on open-source contributions from the Qwen, Hugging Face TRL, PEFT, bitsandbytes, vLLM, and Unsloth projects.
 
 \begin{thebibliography}{9}
 
