@@ -5,6 +5,7 @@ from .sft import (
     build_assistant_spans,
     preprocess_example,
     sanity_check_mask_share,
+    verify_eos_in_loss,
 )
 
 # ── HuggingFace push + cards ─────────────────────────────────────────
@@ -43,6 +44,7 @@ __all__ = [
     "build_assistant_spans",
     "preprocess_example",
     "sanity_check_mask_share",
+    "verify_eos_in_loss",
     # hf_push
     "CARDS",
     "DEFAULT_IGNORE",

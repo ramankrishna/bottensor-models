@@ -1,0 +1,43 @@
+# NPC Agentic 7B (v2) — training stack
+# Installed with: pip install -r requirements.txt
+#
+# Pin floor only; the upper bound is documented in README.md operational
+# notes (transformers >= 4.57 required for tool-role chat-template
+# changes; <= 5.5.0 to keep loss reporting numeric).
+
+# ── Core training ────────────────────────────────────────────────────
+torch>=2.10.0                 # CUDA 12.8 build matches A40 driver
+transformers>=4.57.0,<=5.5.0
+trl>=0.24.0                   # SFTConfig + chat-template SFTTrainer
+peft>=0.18.0                  # LoRA r=64
+accelerate>=0.34.0
+bitsandbytes>=0.49.0          # adamw_8bit + 4-bit NF4 base
+unsloth>=2025.10.0            # fused QLoRA kernels + Flash Attention
+unsloth_zoo>=2025.10.0
+datasets>=3.0.0
+sentencepiece>=0.2.0
+protobuf>=4.25.0
+
+# ── Tracking ─────────────────────────────────────────────────────────
+wandb>=0.18.0                 # auto-disables if WANDB_API_KEY is unset
+
+# ── Long-context / Flash Attention ───────────────────────────────────
+# flash-attn install is build-host specific; install separately if your
+# CUDA build needs --no-build-isolation:
+#   pip install flash-attn --no-build-isolation
+# flash-attn>=2.7.0
+xformers>=0.0.30              # fallback when flash-attn isn't available
+
+# ── Inference / quantize / push ──────────────────────────────────────
+vllm>=0.18.0                  # GPTQ smoke test + serving
+llmcompressor>=0.10.0         # GPTQ W4A16 oneshot (scheme="W4A16")
+huggingface-hub>=0.26.0
+hf-transfer>=0.1.8            # multipart uploads
+
+# ── llama.cpp / GGUF ─────────────────────────────────────────────────
+gguf>=0.10.0                  # required by convert_hf_to_gguf.py
+# llama.cpp itself is cloned + built by scripts/07_gguf.py
+
+# ── Misc ─────────────────────────────────────────────────────────────
+tqdm>=4.66.0
+numpy>=1.26.0

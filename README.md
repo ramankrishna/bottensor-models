@@ -22,7 +22,8 @@ HuggingFace under [`ramankrishna10/*`](https://huggingface.co/ramankrishna10).
 | **NPC MoM Router** | n/a (FastAPI gateway)         | Code, not a model         | Routes traffic Fast → Fin          | Retired (replaced by direct vLLM) |
 | **NPC Fin-PRM 7B** | Qwen2.5-7B-Instruct           | QLoRA SFT (process reward) | DeFi-reasoning step verifier (4-dim scoring) | **Shipped on HF, paper in prep** |
 | **NPC Agentic 7B v1** | Qwen2.5-7B-Instruct        | QLoRA SFT (reasoning)     | General multi-step reasoning       | Privatized (quality issues) |
-| **NPC Agentic 7B v2** | Qwen2.5-7B-Instruct        | QLoRA SFT (reasoning, v1 fixes baked in) | General multi-step reasoning   | Training (this branch) |
+| **NPC Agentic 7B v2** | Qwen2.5-7B-Instruct        | QLoRA SFT (v1 fixes; EOS bug carried over) | General multi-step reasoning | Privatized (EOS-mask bug surfaced) |
+| **NPC Agentic 7B v3** | Qwen2.5-7B-Instruct        | QLoRA SFT (EOS-in-loss fix) | General multi-step reasoning   | Pre-train; scaffold ready |
 
 HuggingFace targets:
 
@@ -40,7 +41,8 @@ bottensor-models/
 │   ├── npc-mom-router/       # FastAPI gateway (retired)
 │   ├── npc-fin-prm-7b/       # Process reward model — eval harness + analysis
 │   ├── npc-agentic-7b-v1/    # First reasoning run (lessons learned)
-│   └── npc-agentic-7b-v2/    # Current reasoning run with v1 fixes
+│   ├── npc-agentic-7b-v2/    # Privatized; EOS-in-loss bug + retrospective
+│   └── npc-agentic-7b-v3/    # EOS-fix scaffold; ablation against v2
 ├── shared/
 │   └── utils/                # (placeholder for future cross-model helpers)
 ├── LICENSE                   # Apache-2.0
