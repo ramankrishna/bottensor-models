@@ -3,6 +3,7 @@
 [![NPC Fast DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19771040.svg)](https://doi.org/10.5281/zenodo.19771040)
 [![Cheap PRMs DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19800784.svg)](https://doi.org/10.5281/zenodo.19800784)
 [![NPC Fin 32B DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19802598.svg)](https://doi.org/10.5281/zenodo.19802598)
+[![NPC Agentic 7B DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.19954103.svg)](https://doi.org/10.5281/zenodo.19954103)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 
 Training scripts and configs for the **NPC Model Family** by
@@ -23,13 +24,13 @@ HuggingFace under [`ramankrishna10/*`](https://huggingface.co/ramankrishna10).
 | **NPC Fin-PRM 7B** | Qwen2.5-7B-Instruct           | QLoRA SFT (process reward) | DeFi-reasoning step verifier (4-dim scoring) | **Shipped on HF, paper in prep** |
 | **NPC Agentic 7B v1** | Qwen2.5-7B-Instruct        | QLoRA SFT (reasoning)     | General multi-step reasoning       | Privatized (quality issues) |
 | **NPC Agentic 7B v2** | Qwen2.5-7B-Instruct        | QLoRA SFT (v1 fixes; EOS bug carried over) | General multi-step reasoning | Privatized (EOS-mask bug surfaced) |
-| **NPC Agentic 7B v3** | Qwen2.5-7B-Instruct        | QLoRA SFT (EOS-in-loss fix) | General multi-step reasoning   | Pre-train; scaffold ready |
+| **NPC Agentic 7B v3** | Qwen2.5-7B-Instruct        | QLoRA SFT (EOS-in-loss fix) | Conversational, reasoning-style register | **Shipped on HF, paper on Zenodo** |
 
 HuggingFace targets:
 
 - `ramankrishna10/npc-fast-1.7b`, `-gptq`, `-gguf`
 - `ramankrishna10/npc-fin-prm-7b` — process reward model (public)
-- `ramankrishna10/npc-agentic-7b` (+ `-merged`, `-gptq`, `-gguf`) — currently private until v2 ships
+- `ramankrishna10/npc-agentic-7b-v3` (+ `-lora`, `-gptq-4bit`, `-gguf`) — public, recipe + benchmarks paper on Zenodo
 
 ## Layout
 
@@ -42,7 +43,7 @@ bottensor-models/
 │   ├── npc-fin-prm-7b/       # Process reward model — eval harness + analysis
 │   ├── npc-agentic-7b-v1/    # First reasoning run (lessons learned)
 │   ├── npc-agentic-7b-v2/    # Privatized; EOS-in-loss bug + retrospective
-│   └── npc-agentic-7b-v3/    # EOS-fix scaffold; ablation against v2
+│   └── npc-agentic-7b-v3/    # Shipped — recipe + BFCL benchmarks paper on Zenodo
 ├── shared/
 │   └── utils/                # (placeholder for future cross-model helpers)
 ├── LICENSE                   # Apache-2.0
@@ -101,7 +102,7 @@ Apache-2.0 — see [LICENSE](LICENSE).
 
 ## Citation
 
-Three preprints accompany the family. Cite whichever you build on:
+Four preprints accompany the family. Cite whichever you build on:
 
 ### NPC Fast 1.7B — single-H100 small-model recipe
 
@@ -119,6 +120,12 @@ Three preprints accompany the family. Cite whichever you build on:
 > Bachu, R. K. (2026). *NPC Fin 32B: A Domain-Specialized Financial
 > Reasoning Model via Multi-GPU QLoRA.* Zenodo.
 > https://doi.org/10.5281/zenodo.19802598
+
+### NPC Agentic 7B — single-A40 recipe + base-vs.-fine-tune BFCL benchmarks
+
+> Bachu, R. K. (2026). *NPC Agentic 7B: A Single-GPU QLoRA Recipe for a
+> Laptop-Scale Conversational Model.* Zenodo.
+> https://doi.org/10.5281/zenodo.19954103
 
 BibTeX:
 
@@ -152,6 +159,17 @@ BibTeX:
   publisher    = {Zenodo},
   doi          = {10.5281/zenodo.19802598},
   url          = {https://doi.org/10.5281/zenodo.19802598},
+  note         = {Preprint},
+}
+
+@misc{bachu2026npcagentic7b,
+  title        = {NPC Agentic 7B: A Single-GPU QLoRA Recipe for a
+                  Laptop-Scale Conversational Model},
+  author       = {Bachu, Rama Krishna},
+  year         = {2026},
+  publisher    = {Zenodo},
+  doi          = {10.5281/zenodo.19954103},
+  url          = {https://doi.org/10.5281/zenodo.19954103},
   note         = {Preprint},
 }
 ```

@@ -1,10 +1,6 @@
-# NPC Agentic 7B — v3 (EOS-discipline fix)
+# NPC Agentic 7B — v3
 
-> **Status: scaffolded; pre-train.** Differs from v2 in exactly one place:
-> the chat-template SFT label-masking now includes the closing
-> `<|im_end|>` token in the trained loss. v1 and v2 both excluded it,
-> which produced models that could not terminate cleanly at inference
-> time. v3 isolates the fix as a clean ablation.
+> **Status: shipped.** Public on Hugging Face under `ramankrishna10/npc-agentic-7b-v3*`. Recipe + benchmarks paper on Zenodo: [10.5281/zenodo.19954103](https://doi.org/10.5281/zenodo.19954103). Differs from v2 in exactly one place: the chat-template SFT label-masking now includes the closing `<|im_end|>` token in the trained loss. v1 and v2 both excluded it, which produced models that could not terminate cleanly at inference time. v3 isolates the fix as a clean ablation.
 
 ## TL;DR root cause (the bug v3 fixes)
 
@@ -90,26 +86,61 @@ training/npc-agentic-7b-v3/
 - `ramankrishna10/npc-agentic-7b-v3-lora` (adapter)
 - `ramankrishna10/npc-agentic-7b-v3-gguf` (Q4_K_M / Q5_K_M / Q8_0)
 
-## Expected outcome at v3 eval
+## Measured outcomes (head-to-head vs.~base Qwen2.5-7B-Instruct)
 
-| Metric | v2 actual | v3 hypothesis |
-|---|---:|---:|
-| Identity strong-match (held-out 15) | 60 % (9/15) | ≥ 60 % (probably +5–10 pp from cleaner termination) |
-| Hallucinated `Human:` / `Assistant:` continuations | present in many samples | rare or absent |
-| `</details>` repetition loop (sample [12]) | 74× | 0 |
-| Hallucinated `<thoughts>` / `<chat_history>` | present | rare or absent |
-| GSM8K (proper extractor, via `03b_gsm8k_rerun.py`) | unmeasured (broken extractor + chain stalled) | measurable, hopefully near base 51 % |
+Both models served via vLLM 0.6.3, auto-gptq W4A16 quantization (group_size 128, sym False, desc_act True, 512 calibration samples from `mit-han-lab/pile-val-backup`), greedy decoding (`temperature=0`). Multi-turn ran at `max_model_len=16384` after an 8K initial run produced ~95% HTTP-400 errors due to context overflow.
 
-## Citation (forthcoming v3 paper)
+### BFCL v4 (Berkeley Function Calling Leaderboard)
+
+| Subset | Base | v3 | Δ |
+|---|---:|---:|---:|
+| `live` (single-turn) | 71.1% | 69.0% | −2.1 pp |
+| `multi_turn` (avg) | 11.6% | 3.4% | −8.2 pp |
+| ⤷ `multi_turn_base` | 18.0% | 8.0% | −10.0 pp |
+| ⤷ `multi_turn_miss_func` | 13.5% | 0.5% | −13.0 pp |
+| ⤷ `multi_turn_miss_param` | 9.0% | 2.5% | −6.5 pp |
+| ⤷ `multi_turn_long_context` | 6.0% | 2.5% | −3.5 pp |
+| `relevance` | 93.8% | 87.5% | −6.2 pp |
+| `irrelevance` | **69.9%** | **79.5%** | **+9.6 pp** |
+
+**Headline finding.** v3 regresses on function calling at a 4096 max_new_tokens budget: the `<think>`-style reasoning consumes the budget before the model emits the `<tool_call>` block. Practitioners deploying v3 for tool-use should set `max_new_tokens >= 8192` or use `</think>` as a stop sequence. Irrelevance detection improves (+9.6 pp).
+
+### GSM8K-100
+
+| Model | Score |
+|---|---:|
+| Qwen2.5-7B-Instruct (base) | **61%** |
+| NPC Agentic 7B v3 | 6% |
+
+The identity-cohort training pushes v3's register away from compact arithmetic answers; do not use this model for math-primary use cases.
+
+### Throughput (BFCL workload, single-stream)
+
+| Backend | Hardware | Tokens/sec |
+|---|---|---:|
+| llama.cpp Q4_K_M GGUF | Apple Silicon | ~25 |
+| vLLM 0.6.3 GPTQ W4A16 | A40 | ~76 |
+
+### Verification probe at training kickoff
+
+`verify_eos_in_loss` returned `eos_total=122, eos_unmasked=50` across 50 sampled rows — correct shape (one unmasked EOS per assistant turn, system/user EOS correctly masked).
+
+## Benchmark harness
+
+The full BFCL head-to-head harness (vLLM serve config, model registry patch, scoring extractor, comparison-table builder) is at [github.com/ramankrishna/bench-npc-agentic-v3](https://github.com/ramankrishna/bench-npc-agentic-v3).
+
+## Citation
 
 ```bibtex
-@misc{bachu2026npcagenticv3,
-  title  = {NPC Agentic 7B v3: An EOS-Discipline Recipe-Paper Retrospective on
-            QLoRA SFT Termination Failures},
+@misc{bachu2026npcagentic7b,
+  title  = {NPC Agentic 7B: A Single-GPU QLoRA Recipe for a
+            Laptop-Scale Conversational Model},
   author = {Bachu, Rama Krishna},
   year   = {2026},
-  note   = {Preprint, in preparation. Documents the v1/v2 EOS-mask bug, the
-            one-line fix, the verification probe, and v3's ablation results.},
+  publisher = {Zenodo},
+  doi    = {10.5281/zenodo.19954103},
+  url    = {https://doi.org/10.5281/zenodo.19954103},
+  note   = {Preprint},
 }
 ```
 
